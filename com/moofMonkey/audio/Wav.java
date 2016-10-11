@@ -19,8 +19,6 @@ import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.TargetDataLine;
 
-import com.moofMonkey.utils.HEXUtils;
-
 /**
  * About WAV [RUS]: http://audiocoding.ru/article/2008/05/22/wav-file-structure.html
  * @author moofMonkey
@@ -54,8 +52,8 @@ public class Wav {
 	private short bitsPerSample = 0;
 	private String specialData = "";
 	private String subChunk2ID = "data";
-	private int subChunk2Size = 0;
 	public byte[] data;
+	public byte[] dataAtEnd;
 
 	public Wav() {
 		filePath = "";
@@ -75,7 +73,7 @@ public class Wav {
 
 	public boolean read() throws Throwable {
 		try (
-				DataInputStream inFile = new DataInputStream(new FileInputStream(filePath));
+				DataInputStream inFile = new DataInputStream(new FileInputStream(filePath + ".wav"));
 		) {
 			chunkID = new String (
 				getBytes (
@@ -153,16 +151,17 @@ public class Wav {
 				specialData += (char) inFile.readByte();
 			specialData = specialData.substring(0, specialData.length() - subChunk2ID.length());
 
-			subChunk2Size = NativeTranslate.bytes2int (
+			int subChunk2Size = NativeTranslate.bytes2int (
 				getBytes (
 					4,
 					inFile
 				)
 			);
 			
-			// read the data chunk
 			data = new byte[(int) subChunk2Size];
 			inFile.read(data);
+			dataAtEnd = new byte[inFile.available()];
+			inFile.readFully(dataAtEnd);
 		} catch(Throwable t) {
 			t.printStackTrace();
 			return false;
@@ -180,7 +179,7 @@ public class Wav {
 
 	public boolean save() {
 		try (
-				DataOutputStream outFile = new DataOutputStream(new FileOutputStream(filePath + ".modify"));
+				DataOutputStream outFile = new DataOutputStream(new FileOutputStream(filePath + "modify.wav"));
 		) {
 			outFile.writeBytes(chunkID); //RIFF
 			outFile.write (
@@ -229,10 +228,11 @@ public class Wav {
 			outFile.writeBytes(subChunk2ID); //data
 			outFile.write (
 				NativeTranslate.int2bytes (
-					subChunk2Size
+					data.length
 				)
 			);
 			outFile.write(data);
+			outFile.write(dataAtEnd);
 		} catch(Throwable t) {
 			t.printStackTrace();
 			return false;
@@ -244,10 +244,10 @@ public class Wav {
 	public String getSummary() {
 		String newline = System.getProperty("line.separator");
 		String summary = "Format: " + audioFormat + newline + "Channels: " + numChannels
-				+ newline + "SampleRate: " + sampleRate + newline + "ByteRate: "
+				+ newline + "Sample rate: " + sampleRate + newline + "Byte rate: "
 				+ byteRate + newline + "BlockAlign: " + blockAlign + newline
-				+ "BitsPerSample: " + bitsPerSample + newline + "DataSize: "
-				+ subChunk2Size + "";
+				+ "Bits/1 Sample: " + bitsPerSample + newline + "Data size: "
+				+ data.length + newline + "Data at end: " + new String(dataAtEnd);
 		
 		return summary;
 	}
