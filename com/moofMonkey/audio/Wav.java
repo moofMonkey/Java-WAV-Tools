@@ -19,6 +19,8 @@ import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.TargetDataLine;
 
+import com.moofMonkey.utils.IOUtils;
+
 /**
  * About WAV [RUS]: http://audiocoding.ru/article/2008/05/22/wav-file-structure.html
  * @author moofMonkey
@@ -52,7 +54,7 @@ public class Wav {
 	private short bitsPerSample = 0;
 	private String specialData = "";
 	private String subChunk2ID = "data";
-	public byte[] data;
+	public byte[] soundData;
 	public byte[] dataAtEnd;
 
 	public Wav() {
@@ -73,95 +75,32 @@ public class Wav {
 
 	public boolean read() throws Throwable {
 		try (
-				DataInputStream inFile = new DataInputStream(new FileInputStream(filePath + ".wav"));
+				IOUtils io = new IOUtils(new DataInputStream(new FileInputStream(filePath + ".wav")));
 		) {
-			chunkID = new String (
-				getBytes (
-					4,
-					inFile
-				)
-			);
+			chunkID = io.readString(); //RIFF
+			chunkSize = io.readInt(); //Must be filesize-8
+			format = io.readString(); //WAVE
+			subChunk1ID = io.readString(); //fmt*
 
-			chunkSize = NativeTranslate.bytes2int (
-				getBytes (
-					4,
-					inFile
-				)
-			);
-
-			format = new String (
-				getBytes (
-					4,
-					inFile
-				)
-			);
-			
-			subChunk1ID = new String (
-				getBytes (
-					4,
-					inFile
-				)
-			);
-
-			subChunk1Size = NativeTranslate.bytes2int (
-				getBytes (
-					4,
-					inFile
-				)
-			);
-			audioFormat = NativeTranslate.bytes2short (
-				getBytes (
-					2,
-					inFile
-				)
-			);
-			numChannels = NativeTranslate.bytes2short (
-				getBytes (
-					2,
-					inFile
-				)
-			);
-			sampleRate = NativeTranslate.bytes2int (
-				getBytes (
-					4,
-					inFile
-				)
-			);
-			byteRate = NativeTranslate.bytes2int (
-				getBytes (
-					4,
-					inFile
-				)
-			);
-			blockAlign = NativeTranslate.bytes2short (
-				getBytes (
-					2,
-					inFile
-				)
-			);
-			bitsPerSample = NativeTranslate.bytes2short (
-				getBytes (
-					2,
-					inFile
-				)
-			);
+			subChunk1Size = io.readInt();
+			audioFormat = io.readShort();
+			numChannels = io.readShort();
+			sampleRate = io.readInt();
+			byteRate = io.readInt();
+			blockAlign = io.readShort();
+			bitsPerSample = io.readShort();
 			
 			specialData = "";
 			while(!specialData.endsWith(subChunk2ID))
-				specialData += (char) inFile.readByte();
+				specialData += (char) io.getIn().readByte();
 			specialData = specialData.substring(0, specialData.length() - subChunk2ID.length());
 
-			int subChunk2Size = NativeTranslate.bytes2int (
-				getBytes (
-					4,
-					inFile
-				)
-			);
+			int subChunk2Size = io.readInt();
+			soundData = new byte[(int) subChunk2Size];
+			io.getIn().readFully(soundData);
 			
-			data = new byte[(int) subChunk2Size];
-			inFile.read(data);
-			dataAtEnd = new byte[inFile.available()];
-			inFile.readFully(dataAtEnd);
+			dataAtEnd = new byte[io.getIn().available()];
+			io.getIn().readFully(dataAtEnd);
 		} catch(Throwable t) {
 			t.printStackTrace();
 			return false;
@@ -169,70 +108,28 @@ public class Wav {
 
 		return true;
 	}
-	
-	public static byte[] getBytes(int num, DataInputStream in) throws Throwable {
-		byte[] bytes = new byte[num];
-		in.readFully(bytes);
-		
-		return bytes;
-	}
 
 	public boolean save() {
 		try (
-				DataOutputStream outFile = new DataOutputStream(new FileOutputStream(filePath + "modify.wav"));
+				IOUtils io = new IOUtils(new DataOutputStream(new FileOutputStream(filePath + "modify.wav")));
 		) {
-			outFile.writeBytes(chunkID); //RIFF
-			outFile.write (
-				NativeTranslate.int2bytes (
-					chunkSize
-				)
-			);
-			outFile.writeBytes(format); //WAVE
-			outFile.writeBytes(subChunk1ID); //fmt*
-			outFile.write (
-				NativeTranslate.int2bytes (
-					subChunk1Size
-				)
-			);
-			outFile.write (
-				NativeTranslate.short2bytes (
-					audioFormat
-				)
-			);
-			outFile.write (
-				NativeTranslate.short2bytes (
-					numChannels
-				)
-			);
-			outFile.write (
-				NativeTranslate.int2bytes (
-					sampleRate
-				)
-			);
-			outFile.write (
-				NativeTranslate.int2bytes (
-					byteRate
-				)
-			);
-			outFile.write (
-				NativeTranslate.short2bytes (
-					blockAlign
-				)
-			);
-			outFile.write (
-				NativeTranslate.short2bytes (
-					bitsPerSample
-				)
-			);
-			outFile.writeBytes(specialData);
-			outFile.writeBytes(subChunk2ID); //data
-			outFile.write (
-				NativeTranslate.int2bytes (
-					data.length
-				)
-			);
-			outFile.write(data);
-			outFile.write(dataAtEnd);
+			io.writeString(chunkID); //RIFF
+			io.writeInt(chunkSize);
+			io.writeString(format); //WAVE
+			io.writeString(subChunk1ID); //fmt*
+			
+			io.writeInt(subChunk1Size);
+			io.writeShort(audioFormat);
+			io.writeShort(numChannels);
+			io.writeInt(sampleRate);
+			io.writeInt(byteRate);
+			io.writeShort(blockAlign);
+			io.writeShort(bitsPerSample);
+			io.writeString(specialData);
+			io.writeString(subChunk2ID); //data
+			io.writeInt(soundData.length);
+			io.getOut().write(soundData);
+			//outFile.write(dataAtEnd);
 		} catch(Throwable t) {
 			t.printStackTrace();
 			return false;
@@ -247,13 +144,13 @@ public class Wav {
 				+ newline + "Sample rate: " + sampleRate + newline + "Byte rate: "
 				+ byteRate + newline + "BlockAlign: " + blockAlign + newline
 				+ "Bits/1 Sample: " + bitsPerSample + newline + "Data size: "
-				+ data.length + newline + "Data at end: " + new String(dataAtEnd);
+				+ soundData.length + newline + "Data at end: " + new String(dataAtEnd);
 		
 		return summary;
 	}
 
 	public byte[] getBytes() throws Throwable {
-		return data;
+		return soundData;
 	}
 
 	private AudioFormat getAudioFormat() {
@@ -278,7 +175,7 @@ public class Wav {
 	 */
 	public void playAudio() {
 		try {
-			byte[] audioData = data;
+			byte[] audioData = soundData;
 			
 			InputStream byteArrayInputStream = new ByteArrayInputStream(audioData);
 			AudioFormat audioFormat = getAudioFormat();

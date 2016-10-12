@@ -1,6 +1,4 @@
-package com.moofMonkey.audio;
-
-import com.moofMonkey.utils.ReversedHEXUtils;
+package com.moofMonkey.utils;
 
 public class NativeTranslate {
 	public static byte[] int2bytes(int i) {
