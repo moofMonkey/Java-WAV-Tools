@@ -5,7 +5,9 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,30 +27,20 @@ import com.moofMonkey.utils.IOUtils;
 public class Wav {
 	float speed = 1F;
 	private String filePath;
-	/**
-	 * Must be "RIFF"
-	 */
-	private String chunkID;
-	public int chunkSize = 0;
-	/**
-	 * Must be "WAVE"
-	 */
-	private String format;
-	/**
-	 * Must be "fmt*"
-	 */
-	private String subChunk1ID;
+	private String chunkID = "RIFF";
+	private String format = "WAVE";
+	private String subChunk1ID = "fmt ";
 	public int subChunk1Size = 0;
-	public short audioFormat = 0;
-	public short numChannels = 0;;
-	public int sampleRate = 0;
-	public int byteRate = 0;
-	public short blockAlign = 0;
-	public short bitsPerSample = 0;
+	public short audioFormat = 1;
+	public short numChannels = 2;
+	public int sampleRate = 44100;
+	public int byteRate = 176400;
+	public short blockAlign = 4;
+	public short bitsPerSample = 16;
 	public String specialData = "";
 	private String subChunk2ID = "data";
-	public byte[] audioData;
-	public byte[] dataAtEnd;
+	public byte[] audioData = new byte[0];
+	public byte[] dataAtEnd = new byte[0];
 
 	public Wav() {
 		filePath = "";
@@ -62,18 +54,23 @@ public class Wav {
 		return filePath;
 	}
 
-	public void setPath(String newPath) {
+	public Wav setPath(String newPath) {
 		filePath = newPath;
+		
+		return this;
 	}
 
 	public boolean read() throws Throwable {
+		File f = new File(filePath + ".wav");
+		if(!f.exists())
+			throw new FileNotFoundException();
 		try (
 				IOUtils io = new IOUtils(new DataInputStream(new FileInputStream(filePath + ".wav")));
 		) {
-			chunkID = io.readString(); //RIFF
-			chunkSize = io.readInt(); //Must be filesize-8
-			format = io.readString(); //WAVE
-			subChunk1ID = io.readString(); //fmt*
+			io.readString(); //RIFF
+			io.readInt(); //chunkSize
+			io.readString(); //WAVE
+			io.readString(); //fmt*
 
 			subChunk1Size = io.readInt();
 			audioFormat = io.readShort();
@@ -107,7 +104,7 @@ public class Wav {
 				IOUtils io = new IOUtils(new DataOutputStream(new FileOutputStream(filePath + "modify.wav")));
 		) {
 			io.writeString(chunkID); //RIFF
-			io.writeInt(chunkSize);
+			io.writeInt(audioData.length + specialData.length() + 36); //chunkSize
 			io.writeString(format); //WAVE
 			io.writeString(subChunk1ID); //fmt*
 			
@@ -213,13 +210,15 @@ public class Wav {
 				currentPlaying.close();
 			InputStream byteArrayInputStream = new ByteArrayInputStream(audioData);
 			AudioFormat audioFormat = getAudioFormat();
-			audioInputStream = new AudioInputStream(
+			audioInputStream = new AudioInputStream (
 				byteArrayInputStream,
 				audioFormat,
-				audioData.length / audioFormat.getFrameSize());
-			DataLine.Info dataLineInfo = new DataLine.Info(
+				audioData.length / audioFormat.getFrameSize()
+			);
+			DataLine.Info dataLineInfo = new DataLine.Info (
 				SourceDataLine.class,
-				audioFormat);
+				audioFormat
+			);
 			sourceDataLine = (SourceDataLine) AudioSystem.getLine(dataLineInfo);
 			sourceDataLine.open(audioFormat);
 			sourceDataLine.start();
