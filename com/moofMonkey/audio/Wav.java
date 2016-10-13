@@ -31,7 +31,6 @@ public class Wav {
 	private String chunkID = "RIFF";
 	private String format = "WAVE";
 	private String subChunk1ID = "fmt ";
-	public int subChunk1Size = 0;
 	public short audioFormat = 1;
 	public short numChannels = 2;
 	public int sampleRate = 44100;
@@ -73,7 +72,7 @@ public class Wav {
 			io.readString(); //WAVE
 			io.readString(); //fmt*
 
-			subChunk1Size = io.readInt();
+			io.readInt(); //subChunk1Size
 			audioFormat = io.readShort();
 			numChannels = io.readShort();
 			sampleRate = io.readInt();
@@ -122,7 +121,7 @@ public class Wav {
 			io.writeString(format); //WAVE
 			io.writeString(subChunk1ID); //fmt*
 			
-			io.writeInt(subChunk1Size);
+			io.writeInt(16); //subChunk1Size
 			io.writeShort(audioFormat);
 			io.writeShort(numChannels);
 			io.writeInt(sampleRate);
