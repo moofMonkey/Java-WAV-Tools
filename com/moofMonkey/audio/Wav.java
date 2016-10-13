@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -100,8 +101,22 @@ public class Wav {
 	}
 
 	public boolean save() {
+		try {
+			return save (
+				new FileOutputStream (
+					filePath +
+					"modify.wav"
+				)
+			);
+		} catch(Throwable t) {
+			t.printStackTrace();
+			return false;
+		}
+	}
+	
+	public boolean save(OutputStream out) {
 		try (
-				IOUtils io = new IOUtils(new DataOutputStream(new FileOutputStream(filePath + "modify.wav")));
+				IOUtils io = new IOUtils(new DataOutputStream(out));
 		) {
 			io.writeString(chunkID); //RIFF
 			io.writeInt(audioData.length + specialData.length() + 36); //chunkSize
