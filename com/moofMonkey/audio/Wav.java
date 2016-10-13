@@ -62,11 +62,11 @@ public class Wav {
 	}
 
 	public boolean read() throws Throwable {
-		File f = new File(filePath + ".wav");
+		File f = new File(filePath);
 		if(!f.exists())
 			throw new FileNotFoundException();
 		try (
-				IOUtils io = new IOUtils(new DataInputStream(new FileInputStream(filePath + ".wav")));
+				IOUtils io = new IOUtils(new DataInputStream(new FileInputStream(f)));
 		) {
 			io.readString(); //RIFF
 			io.readInt(); //chunkSize
@@ -104,8 +104,7 @@ public class Wav {
 		try {
 			return save (
 				new FileOutputStream (
-					filePath +
-					"modify.wav"
+					filePath
 				)
 			);
 		} catch(Throwable t) {
