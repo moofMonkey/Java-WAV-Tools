@@ -2,6 +2,9 @@ package com.moofMonkey.utils;
 
 import javax.xml.bind.DatatypeConverter;
 
+/**
+ * Utils that allows using of big-endian
+*/
 public class ReversedHEXUtils {
 	public static String toHex(String str) {
 		return toHex(str.getBytes());
