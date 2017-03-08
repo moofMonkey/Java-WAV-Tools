@@ -3,7 +3,6 @@ package com.moofMonkey.audio;
 
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,7 +64,7 @@ public class Wav {
 		if(!f.exists())
 			throw new FileNotFoundException();
 		try (
-				IOUtils io = new IOUtils(new DataInputStream(new FileInputStream(f)));
+				IOUtils io = new IOUtils(new FileInputStream(f));
 		) {
 			io.readString(); //RIFF
 			io.readInt(); //chunkSize
@@ -82,15 +81,15 @@ public class Wav {
 			
 			specialData = "";
 			while(!specialData.endsWith(subChunk2ID))
-				specialData += (char) io.getIn().readByte();
+				specialData += (char) io.getIn().read();
 			specialData = specialData.substring(0, specialData.length() - subChunk2ID.length());
 
 			int subChunk2Size = io.readInt();
 			audioData = new byte[(int) subChunk2Size];
-			io.getIn().readFully(audioData);
+			io.getIn().read(audioData);
 			
 			dataAtEnd = new byte[io.getIn().available()];
-			io.getIn().readFully(dataAtEnd);
+			io.getIn().read(dataAtEnd);
 		} catch(Throwable t) {
 			t.printStackTrace();
 			return false;

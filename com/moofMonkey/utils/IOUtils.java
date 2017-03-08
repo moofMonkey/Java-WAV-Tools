@@ -1,24 +1,24 @@
 package com.moofMonkey.utils;
 
 import java.io.Closeable;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class IOUtils implements Closeable {
-	DataInputStream in;
-	DataOutputStream out;
+	InputStream in;
+	OutputStream out;
 
-	public IOUtils(DataInputStream _in, DataOutputStream _out) {
+	public IOUtils(InputStream _in, OutputStream _out) {
 		in = _in;
 		out = _out;
 	}
 
-	public IOUtils(DataInputStream _in) {
+	public IOUtils(InputStream _in) {
 		in = _in;
 	}
 
-	public IOUtils(DataOutputStream _out) {
+	public IOUtils(OutputStream _out) {
 		out = _out;
 	}
 	
@@ -48,7 +48,7 @@ public class IOUtils implements Closeable {
 	
 	public byte[] getBytes(int num) throws Throwable {
 		byte[] bytes = new byte[num];
-		in.readFully(bytes);
+		in.read(bytes);
 		
 		return bytes;
 	}
@@ -56,8 +56,8 @@ public class IOUtils implements Closeable {
 	//-----------------------------------------------------------------------------
 
 	public void writeString(String str) throws Throwable {
-		out.writeBytes (
-			str
+		out.write (
+			str.getBytes()
 		);
 	}
 	
@@ -87,11 +87,11 @@ public class IOUtils implements Closeable {
 
 	//-----------------------------------------------------------------------------
 	
-	public DataInputStream getIn() {
+	public InputStream getIn() {
 		return in;
 	}
 	
-	public DataOutputStream getOut() {
+	public OutputStream getOut() {
 		return out;
 	}
 }

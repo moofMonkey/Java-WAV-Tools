@@ -5,7 +5,7 @@ public class NativeTranslate {
 		String str = Integer.toHexString(i);
 		while(str.length() < 8)
 			str = "0" + str;
-		return ReversedHEXUtils.fromHex (
+		return BigEndianHEXUtils.fromHex (
 			reverse (
 				str
 			)
@@ -16,7 +16,7 @@ public class NativeTranslate {
 		String str = Integer.toHexString((int) s);
 		while(str.length() < 4)
 			str = "0" + str;
-		return ReversedHEXUtils.fromHex (
+		return BigEndianHEXUtils.fromHex (
 			reverse (
 				str
 			)
@@ -25,7 +25,7 @@ public class NativeTranslate {
 
 	public static int bytes2int(byte[] b) {
 		return Integer.parseInt (
-			ReversedHEXUtils.toHex (
+			BigEndianHEXUtils.toHex (
 				b
 			),
 			16
@@ -34,7 +34,7 @@ public class NativeTranslate {
 	
 	public static short bytes2short(byte[] b) {
 		return Short.parseShort (
-			ReversedHEXUtils.toHex(b),
+			BigEndianHEXUtils.toHex(b),
 			16
 		);
 	}
