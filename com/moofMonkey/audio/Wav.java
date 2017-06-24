@@ -30,7 +30,7 @@ public class Wav {
 	private String chunkID = "RIFF";
 	private String format = "WAVE";
 	private String subChunk1ID = "fmt ";
-	public short audioFormat = 1;
+	public short audioFormat = 0xFFFF;
 	public short numChannels = 2;
 	public int sampleRate = 44100;
 	public int byteRate = 176400;
